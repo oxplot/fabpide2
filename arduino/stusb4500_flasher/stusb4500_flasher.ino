@@ -19,6 +19,16 @@
 // pins which vary across boards.
 //
 // 3. Set the serial monitor to 115200 baud and follow prompts.
+// 4. Set SDA_PIN & SCL_PIN to the pin number of the SDA and SCL on your board.
+// 5. Set SDA_PORT & SCL_PORT to the port name of the SDA and SCL pins on your board.
+//    * The default config is for Arduino Nano board.
+
+#define SDA_PIN 4
+#define SCL_PIN 5
+#define SDA_PORT PORTC
+#define SCL_PORT PORTC
+
+#include <SoftWire.h>
 
 #define FTP_CUST_PASSWORD_REG 0x95
 #define FTP_CUST_PASSWORD 0x47
@@ -49,8 +59,8 @@
 
 #define ADDRESS 0x28
 
-#include <Wire.h>
 
+SoftWire Wire = SoftWire();
 /////////////////////////////////////////////////////////////////
 // Replace these with .h output file from GUI config editor:
 //  https://github.com/usb-c/STUSB4500/tree/master/GUI
@@ -58,8 +68,8 @@
 uint8_t Sector0[8] = {0x00,0x00,0xFF,0xAA,0x00,0x45,0x00,0x00};
 uint8_t Sector1[8] = {0x00,0x40,0x11,0x1C,0xF0,0x01,0x00,0xDF};
 uint8_t Sector2[8] = {0x02,0x40,0x0F,0x00,0x32,0x00,0xFC,0xF1};
-uint8_t Sector3[8] = {0x00,0x19,0x54,0xAF,0x08,0x30,0x55,0x00};
-uint8_t Sector4[8] = {0x00,0x64,0x90,0x21,0x43,0x00,0x48,0xFB};
+uint8_t Sector3[8] = {0x00,0x19,0x34,0x0F,0x53,0x35,0x55,0x00};
+uint8_t Sector4[8] = {0x00,0x2D,0x90,0x21,0x03,0x00,0x40,0xFB};
 /////////////////////////////////////////////////////////////////
 
 void setup() {
@@ -68,9 +78,10 @@ void setup() {
 }
 
 void loop() {
-  uint8_t buf[20];
+  uint8_t buf[40];
 
   delay(1000);
+  Serial.println();
   Serial.println("Press 'f' to flash the configuration ...");
   while(!Serial.available() || Serial.read() != 'f');
   Serial.println("Flashing - hang on ...");
@@ -79,20 +90,32 @@ void loop() {
     Serial.println("FAILED flashing :(");
     return;
   }
-  Serial.println("Done! :)");
 
-/* FIXME: Reading from addresses above 0x7F is broken for now.
-  Serial.print("Reading sectors ");
-  
+  Serial.println("Verifying - hang on some more ...");
   if (nvmRead(buf) != 0) {
+    Serial.println("Failed to read the flash :(");
     return;
   }
-  for (int i = 0; i < 40; i++) {
-    Serial.print("  ");
-    Serial.print(buf[i], HEX);
+  if (
+    !verifySector(Sector0, &buf[8 * 0])
+    || !verifySector(Sector1, &buf[8 * 1])
+    || !verifySector(Sector2, &buf[8 * 2])
+    || !verifySector(Sector3, &buf[8 * 3])
+    || !verifySector(Sector4, &buf[8 * 4])
+  ) {
+    Serial.println("Verification failed :(");
+    return;
   }
-  Serial.println();
-*/
+  Serial.println("All done! Yayyyy! :)");
+}
+
+bool verifySector(uint8_t* target, uint8_t* actual) {
+  for (int i = 0; i < 8; i++) {
+    if (actual[i] != target[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 int chipWrite(uint8_t reg, uint8_t* data, uint8_t len) {
@@ -113,7 +136,6 @@ int chipWrite(uint8_t reg, uint8_t* data, uint8_t len) {
   return 0;
 }
 
-// FIXME: This is currently broken for reading registers above 0x7F
 int chipRead(uint8_t reg, uint8_t* buf, uint8_t len) {
   Wire.beginTransmission((uint8_t) ADDRESS);
   if (Wire.write((uint8_t) reg) != 1) {
@@ -190,17 +212,12 @@ int enterNVMWriteMode(uint8_t erasedSector) {
     return 1;
   }
 
-// FIXME: Reading from addresses above 0x7F is broken for now.
-// Instead we will assume request will succeed and just wait for a bit.
-//  do
-//  {
-//    if (chipRead(FTP_CTRL_0, buf, 1) != 0 ) {
-//      Serial.println("Failed to wait for execution");
-//      return 1;
-//    }
-//  }
-//  while(buf[0] & FTP_CUST_REQ);
-  delay(200);
+  do {
+    if (chipRead(FTP_CTRL_0, buf, 1) != 0 ) {
+      Serial.println("Failed to wait for execution");
+      return 1;
+    }
+  } while(buf[0] & FTP_CUST_REQ);
 
   buf[0] = SOFT_PROG_SECTOR & FTP_CUST_OPCODE;
   if (chipWrite(FTP_CTRL_1, buf, 1) != 0 ) {
@@ -214,17 +231,12 @@ int enterNVMWriteMode(uint8_t erasedSector) {
     return 1;
   }
 
-// FIXME: Reading from addresses above 0x7F is broken for now.
-// Instead we will assume request will succeed and just wait for a bit.
-//  do
-//  {
-//    if (chipRead(FTP_CTRL_0, buf, 1) != 0 ) {
-//      Serial.println("Failed waiting for execution");
-//      return 1;
-//    }
-//  }
-//  while(buf[0] & FTP_CUST_REQ);
-  delay(200);
+  do {
+    if (chipRead(FTP_CTRL_0, buf, 1) != 0 ) {
+      Serial.println("Failed waiting for execution");
+      return 1;
+    }
+  } while(buf[0] & FTP_CUST_REQ);
 
   buf[0] = ERASE_SECTOR & FTP_CUST_OPCODE;
   if (chipWrite(FTP_CTRL_1, buf, 1) != 0) {
@@ -238,17 +250,12 @@ int enterNVMWriteMode(uint8_t erasedSector) {
     return 1;
   }
 
-// FIXME: Reading from addresses above 0x7F is broken for now.
-// Instead we will assume request will succeed and just wait for a bit.
-//  do
-//  {
-//    if ( chipRead(FTP_CTRL_0, buf, 1) != 0 ) {
-//      Serial.println("Failed waiting for execution");
-//      return 1;
-//    }
-//  }
-//  while(buf[0] & FTP_CUST_REQ);
-  delay(200);
+  do {
+    if ( chipRead(FTP_CTRL_0, buf, 1) != 0 ) {
+      Serial.println("Failed waiting for execution");
+      return 1;
+    }
+  } while(buf[0] & FTP_CUST_REQ);
   
   return 0;
 }
@@ -276,15 +283,9 @@ int writeNVMSector(uint8_t SectorNum, uint8_t *SectorData)
     return -1;
   }
 
-// FIXME: Reading from addresses above 0x7F is broken for now.
-// Instead we will assume request will succeed and just wait for a bit.
-//    do
-//    {
-//        if ( chipRead(FTP_CTRL_0,Buffer,1) != 0 )return -1;
-//    }
-//    while(Buffer[0] & FTP_CUST_REQ) ;
-  delay(200);
-
+  do {
+    if ( chipRead(FTP_CTRL_0,Buffer,1) != 0 )return -1;
+  } while(Buffer[0] & FTP_CUST_REQ) ;
 
   Buffer[0] = PROG_SECTOR & FTP_CUST_OPCODE;
   if (chipWrite(FTP_CTRL_1, Buffer, 1) != 0) {
@@ -296,14 +297,9 @@ int writeNVMSector(uint8_t SectorNum, uint8_t *SectorData)
     return -1;
   }
 
-// FIXME: Reading from addresses above 0x7F is broken for now.
-// Instead we will assume request will succeed and just wait for a bit.
-//    do
-//    {
-//        if ( chipRead(FTP_CTRL_0,Buffer,1) != 0 )return -1;
-//    }
-//    while(Buffer[0] & FTP_CUST_REQ);
-  delay(200);
+  do {
+      if ( chipRead(FTP_CTRL_0,Buffer,1) != 0 )return -1;
+  } while(Buffer[0] & FTP_CUST_REQ);
 
   return 0;
 }
@@ -353,14 +349,12 @@ int readNVMSector(uint8_t num, uint8_t* data) {
     Serial.println("Failed to read sectors opcode");
     return 1;
   }
-  do
-  {   
+  do {
     if (chipRead(FTP_CTRL_0, buf, 1) != 0) {
       Serial.println("Failed waiting for execution");
       return 1;
     }
-  }
-  while(buf[0] & FTP_CUST_REQ);
+  } while(buf[0] & FTP_CUST_REQ);
 
   if (chipRead(RW_BUFFER, &data[0], 8) != 0) {
     Serial.println("NVM read failed");
