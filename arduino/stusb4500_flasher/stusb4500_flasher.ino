@@ -1,5 +1,24 @@
 // stusb4500_flasher.ino - flash STUSB4500 NVM with configuration
 // Ported to Arduino from https://github.com/usb-c/STUSB4500
+//
+// 1. Using the official GUI configuration tool, generate an .h sector
+// file and paste its content at the appropriate place in this file
+// further below.
+//
+// 2. Connect to fabpide2 board as following:
+//
+//   Arduino   | fabpide2
+//   --------------------
+//   SDA         SDA
+//   SCL         SCL
+//   5v          VCC
+//   5v          VPP (pull-up power)
+//   GND         GND
+//
+// Look at the pinout of your arduino board to locate the SDA and SCL
+// pins which vary across boards.
+//
+// 3. Set the serial monitor to 115200 baud and follow prompts.
 
 #define FTP_CUST_PASSWORD_REG 0x95
 #define FTP_CUST_PASSWORD 0x47
@@ -30,9 +49,6 @@
 
 #define ADDRESS 0x28
 
-// Connect this push button to GND
-#define FLASH_BUTTON 2
-
 #include <Wire.h>
 
 /////////////////////////////////////////////////////////////////
@@ -49,15 +65,14 @@ uint8_t Sector4[8] = {0x00,0x64,0x90,0x21,0x43,0x00,0x48,0xFB};
 void setup() {
   Wire.begin();
   Serial.begin(115200);
-  pinMode(FLASH_BUTTON, INPUT_PULLUP);
 }
 
 void loop() {
   uint8_t buf[20];
 
   delay(1000);
-  Serial.println("Press button to flash the configuration ...");
-  while(digitalRead(2) == HIGH);
+  Serial.println("Press 'f' to flash the configuration ...");
+  while(!Serial.available() || Serial.read() != 'f');
   Serial.println("Flashing - hang on ...");
 
   if (nvm_flash() != 0) {

@@ -10,7 +10,8 @@ tindie](https://www.tindie.com/products/18263/).
 You need the [official GUI
 app](https://github.com/usb-c/STUSB4500/tree/master/GUI) to generate
 configuration values which can then be flashed using an Arduino via I2C
-bus. An arduino sketch is provided here for this purpose.
+bus. An arduino sketch is provided here for this purpose. See the
+instructions in the header comment of the sketch.
 
 # Is this open source?
 
