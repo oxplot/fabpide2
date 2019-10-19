@@ -1,32 +1,155 @@
 // stusb4500_flasher.ino - flash STUSB4500 NVM with configuration
-// Ported to Arduino from https://github.com/usb-c/STUSB4500
+// Ported to Arduino from https://github.com/usb-c/STUSB4500 and further configuration
+// builder implemented on top.
 //
-// 1. Using the official GUI configuration tool, generate an .h sector
-// file and paste its content at the appropriate place in this file
-// further below.
-//
-// 2. Connect to fabpide2 board as following:
+// 1. Connect to fabpide2 board as following:
 //
 //   Arduino   | fabpide2
 //   --------------------
 //   SDA         SDA
 //   SCL         SCL
-//   5v          VCC
-//   5v          VPP (pull-up power)
+//   5v/3.3v     VCC
+//   5v/3.3v     VPP
 //   GND         GND
 //
-// Look at the pinout of your arduino board to locate the SDA and SCL
-// pins which vary across boards.
+// SDA and SCL pins are defined further below by macros. They can be any
+// pin on the arduino as software I2C is used.
 //
-// 3. Set the serial monitor to 115200 baud and follow prompts.
-// 4. Set SDA_PIN & SCL_PIN to the pin number of the SDA and SCL on your board.
-// 5. Set SDA_PORT & SCL_PORT to the port name of the SDA and SCL pins on your board.
+// 2. Set SDA_PIN & SCL_PIN to the pin number of the SDA and SCL on your board.
+// 3. Set SDA_PORT & SCL_PORT to the port name of the SDA and SCL pins on your board.
 //    * The default config is for Arduino Nano board.
+// 4. Set appropriate values for the configuration macros below.
+// 5. Upload the sketch and set serial monitor baud to 115200.
+// 6. Follow the prompt.
+//
+/////////////////////////////////////////////////////////////////
+// Config Macros
+/////////////////////////////////////////////////////////////////
+// * There are three PDOs (1, 2 and 3) each defining a voltage range and
+//   max current. The voltage is defined with 50mV resolution between
+//   5-20V and a lower and upper percentage range from 5%-20%. For
+//   instance, when configured with 12V with 5% lower and 20% upper
+//   threshold, supply voltages between 11.4-14.4V are accepted.
+//
+// * If PDO_COUNT is set to 3, PDO3 will be tried to match first. If
+//   supply doesn't support the range and/or max. current, PDO2 will be
+//   tried. If PDO2 cannot be satisfied, PDO 1 is tried like the other two
+//   only if PDO1_ENABLED is true.  Otherwise, the power path is disabled
+//   and no power is supplied to downstream.
+//
+// * If number of PDOs is set to 2 or 1, the matching starts at the
+//   corresponding PDO and goes down to 1, ignoring higher PDO profiles.
+//
+// * PDO1's voltage is 5V and cannot be changed. Max. current for all
+//   PDOs can be set to range 0.5-5A in at specific values. It can
+//   optionally be set to FLEX_I which can be defined on a more granular
+//   level.
+//
+// * Other config parameters are explained in further comments below.
+/////////////////////////////////////////////////////////////////
 
+// Max. current - note incremenets change from 0.25A to 0.5A toward the
+// higher currents.
+#define CURRENT_FLEX 0
+#define CURRENT_0_50 1
+#define CURRENT_0_75 2
+#define CURRENT_1_00 3
+#define CURRENT_1_25 4
+#define CURRENT_1_50 5
+#define CURRENT_1_75 6
+#define CURRENT_2_00 7
+#define CURRENT_2_25 8
+#define CURRENT_2_50 9
+#define CURRENT_2_75 10
+#define CURRENT_3_00 11
+#define CURRENT_3_50 12
+#define CURRENT_4_00 13
+#define CURRENT_4_50 14
+#define CURRENT_5_00 15
+
+// Flexible max. current value (0.005A resolution)
+#define FLEX_CURRENT 3.83
+
+// Number of active PDO configs - between 1 and 3 inclusive.
+#define PDO_COUNT 3
+
+// Define your power requirements below in order of priority.
+// PDOX_VOLTAGE_X_PERCENT can be whole numbers b/w 5 and 20 inclusive.
+// PDOX_VOLTAGE can be from 0-20V with 0.05V resolution.
+#define PDO3_VOLTAGE 20.00
+#define PDO3_VOLTAGE_LOWER_PERCENT 7
+#define PDO3_VOLTAGE_UPPER_PERCENT 9
+#define PDO3_CURRENT CURRENT_5_00
+
+#define PDO2_VOLTAGE 15.78
+#define PDO2_VOLTAGE_LOWER_PERCENT 5
+#define PDO2_VOLTAGE_UPPER_PERCENT 19
+#define PDO2_CURRENT CURRENT_5_00
+
+// PDO1's voltage is 5v and it cannot be changed.
+#define PDO1_CURRENT CURRENT_FLEX
+#define PDO1_VOLTAGE_UPPER_PERCENT 11
+#define PDO1_ENABLED true
+
+// Consult datasheet for details.
+#define GPIO_FUNCTION_SW_CTRL_GPIO
+#define GPIO_FUNCTION_ERROR_RECOVERY
+#define GPIO_FUNCTION_DEBUG
+#define GPIO_FUNCTION_SINK_POWER
+
+// Sets function of the GPIO pin.
+#define GPIO_FUNCTION GPIO_FUNCTION_SINK_POWER
+
+// Discharge time in milliseconds between 84-1260ms inclusive.
+#define VBUS_TO_0V_DISCHARGE_TIME 1000
+// Discharge time in milliseconds between 24-360ms inclusive.
+#define VBUS_TO_LOWER_PDO_DISCHARGE_TIME 200
+
+/////////////////////////////////////////////////////////////////
+
+// Set to appropriate pin and port of your arduino board. SDA and SCL pins
+// need not be I2C pins of arduino as software I2C is used. Default values below
+// are for Arduino Nano.
 #define SDA_PIN 4
 #define SCL_PIN 5
 #define SDA_PORT PORTC
 #define SCL_PORT PORTC
+
+// These sector values are derived from the config macros above.
+uint8_t Sector[5][8] = {
+  {0x00, 0x00, 0xFF, 0xAA, 0x00, 0x45, 0x00, 0x00},
+  {
+    0x00,
+    0x40,
+    0x00 | ((VBUS_TO_0V_DISCHARGE_TIME / 84) << 4) | (VBUS_TO_LOWER_PDO_DISCHARGE_TIME / 24),
+    0x1C,
+    0xF0,
+    0x01,
+    0x00,
+    0xDF
+  },
+  {0x02, 0x40, 0x0F, 0x00, 0x32, 0x00, 0xFC, 0xF1},
+  {
+    0x00,
+    0x19,
+    0x00 | (PDO1_CURRENT << 4) | (PDO_COUNT << 1),
+    0x0F | ((PDO1_VOLTAGE_UPPER_PERCENT - 5) << 4),
+    0x00 | (PDO2_CURRENT) | ((PDO2_VOLTAGE_LOWER_PERCENT - 5) << 4),
+    0x00 | (PDO3_CURRENT << 4) | (PDO2_VOLTAGE_UPPER_PERCENT - 5),
+    0x00 | ((PDO3_VOLTAGE_UPPER_PERCENT - 5) << 4) | (PDO3_VOLTAGE_LOWER_PERCENT - 5),
+    0x00
+  },
+  {
+    0x00 | (((int)(PDO2_VOLTAGE * 20) & 0b11) << 2) << 4,
+    0x00 | ((int)(PDO2_VOLTAGE * 20) >> 2),
+    0x90 | ((int)(PDO3_VOLTAGE * 20) & 0xFF),
+    0x00 | (((int)(FLEX_CURRENT * 200) & 0b1111111) << 1) | ((int)(PDO3_VOLTAGE * 20) >> 8),
+    0x40 | ((int)(FLEX_CURRENT * 200) >> 7),
+    0x00,
+    0x60 | (PDO1_ENABLED ? 0 : 8),
+    0xFB
+  }
+};
 
 #include <SoftWire.h>
 
@@ -57,24 +180,25 @@
 #define SECTOR_3 0x08
 #define SECTOR_4 0x10
 
-#define ADDRESS 0x28
+#define I2C_ADDRESS 0x28
 
+#define DEBUG
 
 SoftWire Wire = SoftWire();
-/////////////////////////////////////////////////////////////////
-// Replace these with .h output file from GUI config editor:
-//  https://github.com/usb-c/STUSB4500/tree/master/GUI
-/////////////////////////////////////////////////////////////////
-uint8_t Sector0[8] = {0x00,0x00,0xFF,0xAA,0x00,0x45,0x00,0x00};
-uint8_t Sector1[8] = {0x00,0x40,0x9D,0x1C,0xF0,0x01,0x20,0xDF};
-uint8_t Sector2[8] = {0x12,0x40,0x0F,0x0F,0x32,0x00,0xFC,0xF1};
-uint8_t Sector3[8] = {0x00,0x19,0x56,0xAF,0x55,0x35,0x55,0x00};
-uint8_t Sector4[8] = {0x00,0x4B,0x90,0x21,0x43,0x00,0x60,0xFB};
-/////////////////////////////////////////////////////////////////
 
 void setup() {
   Wire.begin();
   Serial.begin(115200);
+
+#ifdef DEBUG
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 8; j++) {
+      printHex(Sector[i][j]);
+      Serial.print("\t");
+    }
+    Serial.println();
+  }
+#endif
 }
 
 void loop() {
@@ -96,15 +220,11 @@ void loop() {
     Serial.println("Failed to read the flash :(");
     return;
   }
-  if (
-    !verifySector(Sector0, &buf[8 * 0])
-    || !verifySector(Sector1, &buf[8 * 1])
-    || !verifySector(Sector2, &buf[8 * 2])
-    || !verifySector(Sector3, &buf[8 * 3])
-    || !verifySector(Sector4, &buf[8 * 4])
-  ) {
-    Serial.println("Verification failed :(");
-    return;
+  for (int i = 0; i < 5; i++) {
+    if (!verifySector(Sector[i], &buf[8 * i])) { 
+      Serial.println("Verification failed :(");
+      return;
+    }
   }
   Serial.println("All done! Yayyyy! :)");
 }
@@ -119,7 +239,7 @@ bool verifySector(uint8_t* target, uint8_t* actual) {
 }
 
 int chipWrite(uint8_t reg, uint8_t* data, uint8_t len) {
-  Wire.beginTransmission((uint8_t) ADDRESS);
+  Wire.beginTransmission((uint8_t) I2C_ADDRESS);
   if (Wire.write(reg) != 1) {
     return 1;
   }
@@ -137,14 +257,14 @@ int chipWrite(uint8_t reg, uint8_t* data, uint8_t len) {
 }
 
 int chipRead(uint8_t reg, uint8_t* buf, uint8_t len) {
-  Wire.beginTransmission((uint8_t) ADDRESS);
+  Wire.beginTransmission((uint8_t) I2C_ADDRESS);
   if (Wire.write((uint8_t) reg) != 1) {
     return 1;
   }
   if (Wire.endTransmission(false) != 0) {
     return 1;
   }
-  Wire.requestFrom((uint8_t) ADDRESS, (uint8_t) len, (uint8_t) true);
+  Wire.requestFrom((uint8_t) I2C_ADDRESS, (uint8_t) len, (uint8_t) true);
   for (int i = 0; i < len; i++) {
     while (!Wire.available());
     buf[i] = Wire.read();
@@ -305,13 +425,17 @@ int writeNVMSector(uint8_t SectorNum, uint8_t *SectorData)
 }
 
 int nvm_flash() {
-  if (enterNVMWriteMode(SECTOR_0 | SECTOR_1  | SECTOR_2 | SECTOR_3  | SECTOR_4 ) != 0 ) return -1;
-  if (writeNVMSector(0,Sector0) != 0 ) return -1;
-  if (writeNVMSector(1,Sector1) != 0 ) return -1;
-  if (writeNVMSector(2,Sector2) != 0 ) return -1;
-  if (writeNVMSector(3,Sector3) != 0 ) return -1;
-  if (writeNVMSector(4,Sector4) != 0 ) return -1;
-  if (exitNVMMode() != 0 ) return -1;
+  if (enterNVMWriteMode(SECTOR_0 | SECTOR_1 | SECTOR_2 | SECTOR_3 | SECTOR_4) != 0) {
+    return -1;
+  }
+  for (int i = 0; i < 5; i++) {
+    if (writeNVMSector(i, Sector[i]) != 0) {
+      return -1;
+    }
+  }
+  if (exitNVMMode() != 0) {
+    return -1;
+  }
   return 0;
 }
 
@@ -386,4 +510,10 @@ int nvmRead(uint8_t* out) {
     return 1;
   }
   return 0;
+}
+
+void printHex(int v) {
+  char tmp[10];
+  sprintf(tmp, "0x%.2X", v);
+  Serial.print(tmp);
 }
