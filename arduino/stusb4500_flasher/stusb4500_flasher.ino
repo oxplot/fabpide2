@@ -71,7 +71,7 @@
 #define FLEX_CURRENT 3.83
 
 // Number of active PDO configs - between 1 and 3 inclusive.
-#define PDO_COUNT 3
+#define PDO_COUNT 2
 
 // Define your power requirements below in order of priority.
 // PDOX_VOLTAGE_X_PERCENT can be whole numbers b/w 5 and 20 inclusive.
@@ -81,15 +81,15 @@
 #define PDO3_VOLTAGE_UPPER_PERCENT 9
 #define PDO3_CURRENT CURRENT_5_00
 
-#define PDO2_VOLTAGE 15.78
-#define PDO2_VOLTAGE_LOWER_PERCENT 5
-#define PDO2_VOLTAGE_UPPER_PERCENT 19
-#define PDO2_CURRENT CURRENT_5_00
+#define PDO2_VOLTAGE 15.00
+#define PDO2_VOLTAGE_LOWER_PERCENT 10
+#define PDO2_VOLTAGE_UPPER_PERCENT 10
+#define PDO2_CURRENT CURRENT_1_00
 
 // PDO1's voltage is 5v and it cannot be changed.
 #define PDO1_CURRENT CURRENT_FLEX
 #define PDO1_VOLTAGE_UPPER_PERCENT 11
-#define PDO1_ENABLED true
+#define PDO1_ENABLED false
 
 // Consult datasheet for details.
 #define GPIO_FUNCTION_SW_CTRL_GPIO
@@ -117,15 +117,15 @@
 
 // These sector values are derived from the config macros above.
 uint8_t Sector[5][8] = {
-  {0x00, 0x00, 0xFF, 0xAA, 0x00, 0x45, 0x00, 0x00},
+  {0x00, 0x00, 0xB0, 0xAA, 0x00, 0x45, 0x00, 0x00},
   {
-    0x00,
+    0x10,
     0x40,
     0x00 | ((VBUS_TO_0V_DISCHARGE_TIME / 84) << 4) | (VBUS_TO_LOWER_PDO_DISCHARGE_TIME / 24),
     0x1C,
-    0xF0,
+    0xFF,
     0x01,
-    0x00,
+    0x3C,
     0xDF
   },
   {0x02, 0x40, 0x0F, 0x00, 0x32, 0x00, 0xFC, 0xF1},
@@ -140,13 +140,13 @@ uint8_t Sector[5][8] = {
     0x00
   },
   {
-    0x00 | (((int)(PDO2_VOLTAGE * 20) & 0b11) << 2) << 4,
+    0x00 | ((int)(PDO2_VOLTAGE * 20) & 0b11) << 6,
     0x00 | ((int)(PDO2_VOLTAGE * 20) >> 2),
     0x90 | ((int)(PDO3_VOLTAGE * 20) & 0xFF),
     0x00 | (((int)(FLEX_CURRENT * 200) & 0b1111111) << 1) | ((int)(PDO3_VOLTAGE * 20) >> 8),
     0x40 | ((int)(FLEX_CURRENT * 200) >> 7),
     0x00,
-    0x60 | (PDO1_ENABLED ? 0 : 8),
+    0x40 | (PDO1_ENABLED ? 0 : 8),
     0xFB
   }
 };
