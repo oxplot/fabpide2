@@ -11,15 +11,8 @@ bit of background.
 
 # Flash configuration
 
-You need the [official GUI
-app](https://github.com/usb-c/STUSB4500/tree/master/GUI) (copy under
-vendor directory here as well) to generate
-configuration values which can then be flashed using an Arduino via I2C
-bus. An arduino sketch is provided here for this purpose. See the
-instructions in the header comment of the sketch.
-
-The use of GUI is a temporary measure while I work out how each register
-is encoded so as to eliminate the need for this windows GUI application.
+Please see the comments in the [arduino
+flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino).
 
 # Is this open source?
 
