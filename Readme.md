@@ -16,8 +16,7 @@ flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino).
 
 # Is this open source?
 
-Not yet as I need to clean things up quite a bit. Once done, I will
-include all the design files in KiCad as well as ready to manufacture
-gerber files.
+Yes. You can find the gerber files for revision 2 under `gerber/`
+directory.
 
 <a href="https://www.tindie.com/stores/oxplot/?ref=offsite_badges&utm_source=sellers_oxplot&utm_medium=badges&utm_campaign=badge_large"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-larges.png" alt="I sell on Tindie" width="200" height="104"></a>
