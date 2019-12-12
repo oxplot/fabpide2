@@ -11,15 +11,17 @@ bit of background.
 
 # Flashing configuration with Arduino
 
-* Install the [Software I2C library in this
-  repo](arduino/libs/SoftI2CMaster.zip) on your Arduino IDE (via Sketch
-  menu -> Include Library -> Add .ZIP library) — *note: adding the
-  library may automatically add `#include` lines at the top of the sketch -
-  be sure to remove those*
+1. Open the [arduino
+   flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) in Arduino
+   IDE.
 
-* Open the [arduino
-  flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) and follow
-  the comments on the top of the file.
+2. Install the [Software I2C library in this
+   repo](arduino/libs/SoftI2CMaster.zip) on your Arduino IDE (via Sketch
+   menu -> Include Library -> Add .ZIP library) — *note: adding the
+   library may automatically add `#include` lines at the top of the sketch -
+   be sure to remove those*
+
+3. Follow the comments on the top of the sketch.
 
 # Other drivers
 
