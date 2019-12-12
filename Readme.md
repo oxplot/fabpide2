@@ -9,10 +9,15 @@ See [my blog
 post](https://blog.oxplot.com/usb-pd-standalone-sink-controller/) for a
 bit of background.
 
-# Flash configuration
+# Flashing configuration with Arduino
 
-Please see the comments in the [arduino
-flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino).
+* Install the Software I2C library `arduino/libs/SoftI2CMaster.zip` on
+  your Arduino IDE (via Sketch menu -> Include Library -> Add .ZIP
+  library)
+
+* Open the [arduino
+  flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) ans follow
+  the comments on the top of the file.
 
 # Other drivers
 
