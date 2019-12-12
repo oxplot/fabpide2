@@ -11,9 +11,9 @@ bit of background.
 
 # Flashing configuration with Arduino
 
-* Install the Software I2C library `arduino/libs/SoftI2CMaster.zip` on
-  your Arduino IDE (via Sketch menu -> Include Library -> Add .ZIP
-  library)
+* Install the [Software I2C library in this
+  repo](arduino/libs/SoftI2CMaster.zip) on your Arduino IDE (via Sketch
+  menu -> Include Library -> Add .ZIP library)
 
 * Open the [arduino
   flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) ans follow
