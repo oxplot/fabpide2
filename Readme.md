@@ -14,6 +14,12 @@ bit of background.
 Please see the comments in the [arduino
 flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino).
 
+# Other drivers
+
+STUSB4500 can also be controlled dynamically with an external uC.
+[Andrew](https://github.com/ardnew) has implemented an STM32 HAL driver
+for the chip which is available at https://github.com/ardnew/upd-touch
+
 # Is this open source?
 
 Yes. You can find the gerber files for revision 2 under `gerber/`
