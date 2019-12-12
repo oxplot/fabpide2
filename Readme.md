@@ -16,7 +16,7 @@ bit of background.
   menu -> Include Library -> Add .ZIP library)
 
 * Open the [arduino
-  flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) ans follow
+  flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) and follow
   the comments on the top of the file.
 
 # Other drivers
