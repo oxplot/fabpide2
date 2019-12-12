@@ -14,8 +14,8 @@ bit of background.
 * Install the [Software I2C library in this
   repo](arduino/libs/SoftI2CMaster.zip) on your Arduino IDE (via Sketch
   menu -> Include Library -> Add .ZIP library) — *note: adding the
-  library may automatically add `#include` lines at the top of the sketch
-  - be sure to remove those*
+  library may automatically add `#include` lines at the top of the sketch -
+  be sure to remove those*
 
 * Open the [arduino
   flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) and follow
