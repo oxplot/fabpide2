@@ -48,7 +48,7 @@
 // * Other config parameters are explained in further comments below.
 /////////////////////////////////////////////////////////////////
 
-// Max. current - note incremenets change from 0.25A to 0.5A toward the
+// Max. current - note increments change from 0.25A to 0.5A toward the
 // higher currents.
 #define CURRENT_FLEX 0
 #define CURRENT_0_50 1
@@ -66,6 +66,11 @@
 #define CURRENT_4_00 13
 #define CURRENT_4_50 14
 #define CURRENT_5_00 15
+
+// If enabled poll source for supported current at set voltage and
+// pick highest supported current. When enabled set PDOx_CURRENT to
+// lowest current needed
+#define REQ_SRC_CURRENT false
 
 // Flexible max. current value (0.005A resolution)
 #define FLEX_CURRENT 3.83
@@ -110,6 +115,12 @@
 // Set to appropriate pin and port of your arduino board. SDA and SCL pins
 // need not be I2C pins of arduino as software I2C is used. Default values below
 // are for Arduino Nano.
+//
+// Pinout for current (default) configuration
+// Board   | Nano | Uno | Mega 2650
+// SDA pin |    4 |  A4 |        33
+// SCL pin |    5 |  A5 |        32
+//
 #define SDA_PIN 4
 #define SCL_PIN 5
 #define SDA_PORT PORTC
@@ -146,7 +157,7 @@ uint8_t Sector[5][8] = {
     0x00 | (((int)(FLEX_CURRENT * 200) & 0b1111111) << 1) | ((int)(PDO3_VOLTAGE * 20) >> 8),
     0x40 | ((int)(FLEX_CURRENT * 200) >> 7),
     0x00,
-    0x40 | (PDO1_ENABLED ? 0 : 8),
+    0x40 | (PDO1_ENABLED ? 0 : 8) | (REQ_SRC_CURRENT ? 16 : 0),
     0xFB
   }
 };
