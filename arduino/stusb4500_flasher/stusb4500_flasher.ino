@@ -42,8 +42,8 @@
 //
 // * PDO1's voltage is 5V and cannot be changed. Max. current for all
 //   PDOs can be set to range 0.5-5A in at specific values. It can
-//   optionally be set to FLEX_I which can be defined on a more granular
-//   level.
+//   optionally be set to CURRENT_FLEX which can be defined on a more
+//   granular level.
 //
 // * Other config parameters are explained in further comments below.
 /////////////////////////////////////////////////////////////////
@@ -73,6 +73,9 @@
 #define REQ_SRC_CURRENT false
 
 // Flexible max. current value (0.005A resolution)
+// Instead of using predefined CURRENT_* macros to set maximum current
+// for a PDO, you can set the PDOx_CURRENT = CURRENT_FLEX which will
+// set the maximum current to FLEX_CURRENT value.
 #define FLEX_CURRENT 3.83
 
 // Number of active PDO configs - between 1 and 3 inclusive.
