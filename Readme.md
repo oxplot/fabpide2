@@ -11,6 +11,10 @@ bit of background.
 
 # Flashing configuration with Arduino
 
+One way to use STUSB4500 is to flash desired PDO configurations in its
+NVM and it will work autonomously from then on. To use the chip in this
+manner:
+
 1. Open the [arduino
    flasher](arduino/stusb4500_flasher/stusb4500_flasher.ino) in Arduino
    IDE.
@@ -23,11 +27,15 @@ bit of background.
 
 3. Follow the comments on the top of the sketch.
 
-# Other drivers
+# Control via uC
 
-STUSB4500 can also be controlled dynamically with an external uC.
-[Andrew](https://github.com/ardnew) has implemented an STM32 HAL driver
-for the chip which is available at https://github.com/ardnew/upd-touch
+Another way to use STUSB4500 is to connect it to an external uC to
+dynamically control the chip and respond to events.
+
+[Andrew](https://github.com/ardnew) has implemented an [Arduino
+library](https://github.com/ardnew/STUSB4500a)
+called `STUSB4500` which is available in the official Arduino IDE
+repository and can be installed from inside the IDE.
 
 # Is this open source?
 
