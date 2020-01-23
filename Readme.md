@@ -33,7 +33,7 @@ Another way to use STUSB4500 is to connect it to an external uC to
 dynamically control the chip and respond to events.
 
 [Andrew](https://github.com/ardnew) has implemented an [Arduino
-library](https://github.com/ardnew/STUSB4500a)
+library](https://github.com/ardnew/STUSB4500)
 called `STUSB4500` which is available in the official Arduino IDE
 repository and can be installed from inside the IDE.
 
