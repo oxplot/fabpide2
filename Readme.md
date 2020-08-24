@@ -1,3 +1,5 @@
+**[See the newer fpx module](https://github.com/oxplot/fpx)**
+
 fabpide2 is a PCB kit that breaks out Stand-alone USB PD sink controller
 [STUSB4500](https://www.st.com/en/interfaces-and-transceivers/stusb4500.html)
 by STMicroelectronics.
