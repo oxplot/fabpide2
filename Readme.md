@@ -1,5 +1,8 @@
 **[See the newer fpx module](https://github.com/oxplot/fpx)**
 
+If you're looking for a similar board to this, checkout [Sparkfun's
+Power Delivery Board](https://www.sparkfun.com/products/15801).
+
 fabpide2 is a PCB kit that breaks out Stand-alone USB PD sink controller
 [STUSB4500](https://www.st.com/en/interfaces-and-transceivers/stusb4500.html)
 by STMicroelectronics.
